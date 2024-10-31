@@ -1,0 +1,44 @@
+- name: Set parameters
+  ansible.builtin.set_fact:
+    _prometheus_version: "{{ default_prometheus_version }}"   # https://api.github.com/repos/prometheus/prometheus/releases
+
+- name: Gen passwd
+  delegate_to: localhost
+  ansible.builtin.shell: python3 {{role_path}}/files/genpass.py {{ prometheus_basic_auth_password }}
+  register: _passwd
+
+- name: Create directories for Prometheus
+  ansible.builtin.file:
+    path: prometheus
+    state: directory
+    mode: 0700
+
+- name: Configure Prometheus (1/2)
+  template:
+    src: prometheus.yml.j2
+    dest: '{{ ansible_env.HOME }}/prometheus/prometheus.yml'
+
+- name: Configure Prometheus (2/2)
+  template:
+    src: web.yml.j2
+    dest: '{{ ansible_env.HOME }}/prometheus/web.yml'
+
+- name: Deploy Prometheus
+  become: yes
+  docker_container:
+    name: prometheus-server
+    image: "prom/prometheus:{{_prometheus_version}}"
+    restart: true
+    state: started
+    restart_policy: always
+    ports:
+      - "9090:9090"
+    networks:
+      - name: host
+    volumes:
+      - "{{ ansible_env.HOME }}/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "{{ ansible_env.HOME }}/prometheus/web.yml:/etc/prometheus/web.yml"
+    command:
+      - '--web.enable-remote-write-receiver'
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.config.file=/etc/prometheus/web.yml'

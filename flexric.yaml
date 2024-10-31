@@ -1,0 +1,6 @@
+---
+- name: Deploy FlexRIC
+  hosts: masters[0]
+
+  roles:
+    - role: 5g/flexric

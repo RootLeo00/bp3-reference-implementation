@@ -1,0 +1,18 @@
+- name: Retrieve BP-Flexric
+  ansible.builtin.git:
+    repo: https://github.com/teo-tsou/oai-flexric.git
+    dest: bp-flexric
+    version: master
+    force: yes
+
+- name: Configure flexric
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: 'bp-flexric/oai-flexric/values.yaml'
+
+- name: Deploy flexRIC
+  kubernetes.core.helm:
+    name: oai-flexric
+    chart_ref: bp-flexric/oai-flexric
+    release_namespace: '{{ GCN.core.namespace }}'
+    wait: true

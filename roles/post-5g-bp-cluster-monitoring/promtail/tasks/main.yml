@@ -1,0 +1,13 @@
+- name: Create directories for node promtail
+  ansible.builtin.file:
+    path: promtail
+    state: directory
+    mode: 0700
+
+- name: Apply Promtail DaemonSet
+  template:
+    src: promtail.yaml.j2
+    dest: promtail/promtail-daemonset.yaml
+
+- name: Apply Promtail DaemonSet YAML to the cluster
+  shell: kubectl apply -f promtail/promtail-daemonset.yaml

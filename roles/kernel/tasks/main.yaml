@@ -1,0 +1,61 @@
+- name: Set parameters
+  ansible.builtin.set_fact:
+    _kernel_modules: "{{ kernel.modules | default(default_kernel_modules) }}"
+    _kernel_attributes: "{{ kernel.attributes | default(default_kernel_attributes) }}"
+    _kernel_limits: "{{ kernel.limits | default(default_kernel_limits) }}"
+    _install_custom_kernel: "{{ hostvars[inventory_hostname]['kernel']['image'] | default(false) }}"
+
+- include_tasks: custom_kernel.yaml
+  when: _install_custom_kernel
+
+- block:                                                          # must be root
+  - name: Load kernel modules
+    community.general.modprobe:
+      name: '{{ item }}'
+      state: present
+      persistent: present
+    with_items: "{{ _kernel_modules }}"
+
+  - name: Set kernel attributes
+    ansible.posix.sysctl:
+      name: '{{ item.option }}'
+      value: '{{ item.value }}'
+      sysctl_set: yes
+      state: present
+      reload: yes
+    with_items: "{{ _kernel_attributes }}"
+
+  - name: Set PAM limits
+    community.general.pam_limits:
+      domain: '{{ item.domain }}'
+      limit_type: '{{ item.type }}'
+      limit_item: '{{ item.item }}'
+      value: '{{ item.value }}'
+    with_items: "{{ _kernel_limits }}"
+
+  - name: Setting hugepages
+    ansible.posix.sysctl:
+      name: vm.nr_hugepages
+      value: "{{ kernel.hugepage.number }}"
+      sysctl_set: yes
+      state: present
+      reload: yes
+    when: kernel.hugepage is defined
+
+  - block:
+    - name: Reboot the system
+      reboot:
+        post_reboot_delay: 120
+        connect_timeout: 5
+        reboot_timeout: 400
+
+    - name: Wait for the system to come back online
+      wait_for_connection:
+        connect_timeout: 100
+        sleep: 5
+        delay: 5
+        timeout: 300
+    when: _reboot | default(false)
+
+  become: true
+  

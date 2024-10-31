@@ -1,0 +1,24 @@
+- name: Set parameters
+  ansible.builtin.set_fact:
+    _k8s_flannel_version: "{{ k8s.flannel.version | default(default_k8s_flannel_version) }}"
+    _flannel_iface: "enp1s0"  # Specify the interface to use
+
+- name: Create kube-flannel namespace 
+  kubernetes.core.k8s:
+    name: kube-flannel
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Set kube-flannel privileges
+  shell: kubectl label --overwrite ns kube-flannel pod-security.kubernetes.io/enforce=privileged
+
+- name: Register kube-flannel helm repo
+  shell: 'helm repo add flannel https://flannel-io.github.io/flannel/'
+
+- name: Install kube-flannel
+  shell: helm install flannel \
+          --set podCidr="{{ _podSubnet }}" \
+          --set iface="{{ _flannel_iface }}" \   
+          --version "{{ _k8s_flannel_version }}" \
+          --namespace kube-flannel flannel/flannel

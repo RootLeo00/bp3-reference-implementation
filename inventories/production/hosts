@@ -1,0 +1,40 @@
+all:
+  hosts:
+    192.168.0.1:
+      name: node0
+      apiserver_advertise_address: 192.168.0.1
+    192.168.0.3:
+      name: node1
+      apiserver_advertise_address: 192.168.0.3
+    192.168.0.2:
+      name: node2
+      apiserver_advertise_address: 192.168.0.2
+    192.168.0.4:
+      name: node3
+      apiserver_advertise_address: 192.168.0.4
+    192.168.0.5:
+      name: io
+      apiserver_advertise_address: 192.168.0.5
+      KUBELET_EXTRA_ARGS:
+        cpu-manager-policy: "static"
+        kube-reserved=cpu: "2"
+  children:
+    workers:
+      hosts:
+        192.168.0.4:
+    masters:
+      hosts:
+        192.168.0.3:
+        192.168.0.2:
+    lowlatency_kernel:
+      hosts:
+        # 192.168.0.:
+    flexric:
+      hosts:
+        # 192.168.0.:
+    ha:
+      hosts:
+        192.168.0.1:
+    central_monitor:
+      hosts:
+        192.168.0.1:

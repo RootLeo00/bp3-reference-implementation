@@ -1,0 +1,21 @@
+---
+- name: OS version supported
+  ansible.builtin.assert:
+    fail_msg: Ubuntu {{ansible_distribution_version}} not supported
+    that:
+      - ansible_distribution | lower == "ubuntu"
+      - ansible_distribution_version is version("20.04", '>=')
+      - ansible_distribution_version is version('24.04', '<=')
+
+- name: Create directory /etc/apt/keyrings
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Set dependencies
+  set_fact:
+    packages:
+      system: "{{ lookup('vars', (ansible_distribution | lower)+ '_dependencies')}}"
+      python: "{{ python_packages }}"

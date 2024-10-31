@@ -1,0 +1,42 @@
+- name: Set parameters
+  ansible.builtin.set_fact:
+    _k8s_calico_nodeAddressAutodetectionV4: "{{ k8s.calico.nodeAddressAutodetectionV4 | default(default_k8s_calico_nodeAddressAutodetectionV4) }}"
+    _k8s_calico_encapsulation: " {{k8s.calico.encapsulation | default(default_k8s_calico_encapsulation) }}"
+    _k8s_calico_version: " {{k8s.calico.version | default(default_k8s_calico_version) }}"
+
+- name: Create tigera-operator namespace 
+  kubernetes.core.k8s:
+    name: tigera-operator
+    api_version: v1
+    kind: Namespace
+    state: present
+  
+- name: Set Calico installation instructions
+  ansible.builtin.template:
+    src: tigera_operator.yaml.j2
+    dest: tigera_operator.yaml
+
+- name: Check if projectcalico Helm repository is already added
+  ansible.builtin.command:
+    cmd: helm repo list
+  register: helm_repos
+  failed_when: false  # Avoid failure, handle later
+
+- name: Register projectcalico Helm repository if not already added
+  ansible.builtin.command:
+    cmd: helm repo add projectcalico https://docs.projectcalico.org/charts
+  when: "'projectcalico' not in helm_repos.stdout"
+  changed_when: true
+
+- name: Update Helm repositories
+  ansible.builtin.command:
+    cmd: helm repo update
+  changed_when: false
+
+- name: Install Calico using Helm
+  ansible.builtin.command:
+    cmd: helm install calico projectcalico/tigera-operator --version {{ _k8s_calico_version }} -f tigera_operator.yaml --namespace tigera-operator
+  args:
+    chdir: ~/  # Ensure this is the directory containing tigera_operator.yaml
+  register: helm_install_calico
+  failed_when: "'INSTALLATION FAILED' in helm_install_calico.stderr"

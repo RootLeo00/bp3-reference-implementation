@@ -1,0 +1,31 @@
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+nodeRegistration:
+  name: "{{ _name }}"
+  criSocket: "{{ _criSocket }}"
+  kubeletExtraArgs:
+    {{ kubelet_extra_args }}
+localAPIEndpoint:
+  bindPort: {{ _bindPort | int }}
+{% if _advertiseAddress is defined %}
+  advertiseAddress: "{{ _advertiseAddress }}"
+{% endif %}
+certificateKey: "{{ certificate_key }}"
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+clusterName: "{{ _k8s_clusterName }}"
+networking:
+  serviceSubnet: "{{ _serviceSubnet }}"
+  podSubnet: "{{ _podSubnet }}"
+  dnsDomain: "{{ _dnsDomain }}"
+{% if _controlPlaneEndpoint is defined %}
+controlPlaneEndpoint: "{{ _controlPlaneEndpoint }}"
+{% endif %}
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+# kubelet specific options here
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd

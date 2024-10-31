@@ -1,0 +1,42 @@
+- name: Set parameters
+  ansible.builtin.set_fact:
+    _loki_version: "{{ default_loki_version }}"   # https://api.github.com/repos/grafana/loki/releases
+
+- name: Create directories for Loki
+  ansible.builtin.file:
+    path: loki
+    state: directory
+    mode: 0700
+
+- name: Configure Loki (1/2)
+  template:
+    src: loki-local-config.yaml.j2
+    dest: '{{ ansible_env.HOME }}/loki/loki-local-config.yaml'
+
+- name: Deploy Loki
+  become: yes
+  docker_container:
+    name: loki-server
+    image: "grafana/loki:{{_loki_version}}"
+    restart: true
+    state: started
+    restart_policy: always
+    ports:
+      - "3100:3100"
+    networks:
+      - name: host
+    volumes:
+      - "{{ ansible_env.HOME }}/loki/loki-local-config.yaml:/mnt/config/loki-config.yaml"
+    command:
+      - '-config.file=/mnt/config/loki-config.yaml'
+
+- name: Wait for loki to be ready
+  ansible.builtin.uri:
+    url: http://localhost:3100/ready
+    method: GET
+    status_code: 200
+  register: loki_wait
+  retries: 10
+  delay: 5
+  until: loki_wait is succeeded
+  

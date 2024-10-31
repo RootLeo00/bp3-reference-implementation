@@ -1,0 +1,33 @@
+- name: Create directories for Prometheus
+  ansible.builtin.file:
+    path: prometheus
+    state: directory
+    mode: 0700
+
+- name: Download CRDs
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/master/bundle.yaml
+    dest: prometheus/bundle.yaml
+    mode: '0644'
+
+- name: Apply Prometheus deployment
+  template:
+    src: prometheus.yaml.j2
+    dest: prometheus/prometheus.yaml
+
+- name: Make sure that no secrets exist for accessing prometheus
+  shell: kubectl delete secret kubepromsecret 
+  ignore_errors: true
+
+- name: Create secrets for accessing remote write prometheus
+  shell: kubectl create secret generic kubepromsecret   --from-literal=username={{ remote_write_user }}  --from-literal=password={{ remote_write_pass }}
+
+- name: Make sure CRDs do not exist
+  ansible.builtin.shell: kubectl delete -f prometheus/bundle.yaml
+  ignore_errors: true
+
+- name: Create CRDs
+  ansible.builtin.shell: kubectl create -f prometheus/bundle.yaml
+
+- name: Apply Prometheus YAML to the cluster
+  shell: kubectl apply -f prometheus/prometheus.yaml

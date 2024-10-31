@@ -1,0 +1,16 @@
+runtime:
+  docker:
+    cri:
+      socket: unix:///var/run/cri-dockerd.sock
+
+k8s_tools:
+  - kubectl
+  - kubeadm
+  - kubelet
+
+default_k8s_runtime: docker
+default_k8s_version: "1.29"
+default_k8s_serviceSubnet: '10.96.0.0/16'
+default_k8s_podSubnet: '10.244.0.0/16'
+default_k8s_bindPort: 6443
+default_k8s_dnsDomain: 'cluster.local'

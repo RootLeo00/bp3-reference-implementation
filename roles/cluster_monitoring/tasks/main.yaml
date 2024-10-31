@@ -1,0 +1,9 @@
+- name: Set parameters
+  ansible.builtin.include_role:
+    name: '{{ item }}'
+  loop:
+  - post-5g-bp-cluster-monitoring/prometheus
+  - post-5g-bp-cluster-monitoring/promtail
+  # - post-5g-bp-cluster-monitoring/cadvisor
+  - post-5g-bp-cluster-monitoring/node-exporter
+  - post-5g-bp-cluster-monitoring/kube-state-metrics

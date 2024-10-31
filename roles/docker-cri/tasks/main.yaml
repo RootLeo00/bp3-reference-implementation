@@ -1,0 +1,68 @@
+- name: Retrieve cri-dockerd (1/2)
+  become: yes
+  ansible.builtin.git:
+    repo: https://github.com/Mirantis/cri-dockerd.git
+    dest: cri-dockerd
+    version: "{{ docker_cri_version | default(default_docker_cri_version) }}"
+    force: yes
+
+- name: Retrieve cri-dockerd (2/2)
+  become: yes
+  ansible.builtin.file:
+    path: ./cri-dockerd/bin
+    state: directory
+
+- name: Build cri-dockerd
+  become: yes
+  ansible.builtin.shell: 'go build -o bin/cri-dockerd'
+  args:
+    chdir: ./cri-dockerd
+  environment:
+    GOPATH: /usr/local/go/bin
+    PATH: "/usr/local/go/bin:{{ ansible_env.PATH }}"
+
+- block:                                                          # must be root
+  - name: Install cri-dockerd (1/4)
+    become: yes
+    ansible.builtin.file:
+      path: /usr/local/bin
+      state: directory
+
+  - name: Install cri-dockerd (2/4)
+    become: yes
+    ansible.builtin.shell: 'install -o root -g root -m 0755 bin/cri-dockerd /usr/local/bin/cri-dockerd'
+    args:
+      chdir: ./cri-dockerd
+
+  - name: Install cri-dockerd (3/4)
+    become: yes
+    ansible.builtin.shell: 'cp -a packaging/systemd/* /etc/systemd/system'
+    args:
+        chdir: ./cri-dockerd
+
+  - name: Install cri-dockerd (4/4)
+    become: yes
+    ansible.builtin.shell: "sed -i -e 's,/usr/bin/cri-dockerd,/usr/local/bin/cri-dockerd,' /etc/systemd/system/cri-docker.service"
+    args:
+      chdir: ./cri-dockerd
+
+  - name: Enable and start cri-docker service
+    ansible.builtin.systemd:
+      name: cri-docker.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+
+  - name: Enable and start cri-docker socket
+    ansible.builtin.systemd:
+      name: cri-docker.socket
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+  become: true
+
+- name: Wait for cri-dockerd to be ready
+  ansible.builtin.wait_for:
+    path: /var/run/cri-dockerd.sock
+    state: present
+    timeout: 30

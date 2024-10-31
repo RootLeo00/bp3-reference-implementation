@@ -1,0 +1,7 @@
+default_kernel_modules: []
+default_kernel_attributes: []
+default_kernel_limits: []
+
+# kernel:
+#   hugepage:
+#     number: 0

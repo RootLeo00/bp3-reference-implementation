@@ -1,0 +1,26 @@
+---
+- include_tasks: "{{ (ansible_distribution | lower) + '.yaml' }}"
+
+- block:
+  - name: Install dependencies
+    include_role:
+      name: packages
+
+#                                                                     Install Go
+  - name: Download Go
+    ansible.builtin.get_url:
+      url: https://go.dev/dl/go{{ go_version | default(default_go_version) }}.linux-{{[ansible_architecture] | map('extract', deb_architecture) | first}}.tar.gz
+      dest: ./go.tar.gz
+
+  - block:
+    - name: Remove previous Go installation
+      ansible.builtin.file:
+        path: /usr/local/go
+        state: absent
+
+    - name: Install Go
+      ansible.builtin.unarchive:
+        src: ./go.tar.gz
+        dest: /usr/local
+        copy: false
+  become: yes

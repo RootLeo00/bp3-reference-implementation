@@ -1,0 +1,12 @@
+installation:
+  cni:
+    type: Calico
+  serviceCIDRs:
+    - {{ _serviceSubnet }}
+  calicoNetwork:   
+    bgp: Disabled
+    nodeAddressAutodetectionV4: 
+      {{ _k8s_calico_nodeAddressAutodetectionV4| to_yaml}}
+    ipPools:
+    - cidr: '{{ _podSubnet }}'
+      encapsulation: {{ _k8s_calico_encapsulation }}

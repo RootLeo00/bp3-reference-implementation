@@ -1,0 +1,53 @@
+# - block:
+#   - name: Retrieve OAI
+#     ansible.builtin.git:
+#       repo: https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed.git
+#       dest: oai-cn5g-fed
+#       version: v2.0.1
+#       force: yes
+#   - name: Synchronize all git submodules
+#     shell: "./scripts/syncComponents.sh"
+#     args:
+#       chdir: oai-cn5g-fed
+
+#   - name: generate OAI files 
+#     ansible.builtin.shell: python3 roles/5g/base/files/gen_oai.py
+#     environment:
+#       params_5g:
+#         GCN: '{{ GCN }}'
+#   delegate_to: localhost
+
+- name: copy oai-cn5g-fed/ to remote location ~/oai-cn5g-fed/ --> copying custom chart values
+  ansible.posix.synchronize:
+    src: 'oai-cn5g-fed/'
+    dest: '{{ansible_env.HOME}}/oai-cn5g-fed/'
+    rsync_path: /usr/bin/rsync
+
+
+##### this task below is working errouneously in pull mode and I do not know why, subtituting with above ones
+# - name: Custom chart values
+#   ansible.posix.synchronize:
+#     mode: push
+#     src: '{{ GCN.config_files }}'
+#     dest: oai-cn5g-fed/
+#     recursive: true
+#     checksum: true
+#   when: GCN.config_files is defined
+
+# Specify the rsync binary to use on remote host and on local host
+
+
+# # Deploy the core
+# - name: Deploy the core
+#   ansible.builtin.include_tasks: 'core.yaml'
+#   when: GCN.core.present | default(false)
+
+# # Deploy the RAN 
+# - name: Deploy the RAN
+#   ansible.builtin.include_tasks: 'ran.yaml'
+#   when: GCN.RAN.present | default(false)
+
+# # Deploy the UE
+# - name: Deploy the UE
+#   ansible.builtin.include_tasks: 'ue.yaml'
+#   when: GCN.UE is defined and GCN.UE.present

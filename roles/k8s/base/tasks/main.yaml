@@ -1,0 +1,46 @@
+- name: Set parameters
+  ansible.builtin.set_fact:
+    _k8s_version: "{{ k8s.version | default(default_k8s_version) }}"
+    _kubelet_extra_args: "{{ hostvars[inventory_hostname]['KUBELET_EXTRA_ARGS'] | default({}) }}"
+    _name: "{{ hostvars[inventory_hostname]['name'] | default(inventory_hostname) }}"
+    _advertiseAddress: "{{ hostvars[inventory_hostname]['apiserver_advertise_address'] | default(omit) }}"
+    _bindPort: "{{ hostvars[inventory_hostname]['bindPort'] | default(k8s.bindPort) | default(default_k8s_bindPort) }}"
+    _controlPlaneBindPort: "{{ hostvars[groups['masters'][0]]['bindPort'] | default(k8s.bindPort) | default(default_k8s_bindPort) }}"
+    _criSocket: "{{ runtime[k8s.runtime | default(default_k8s_runtime)].cri.socket }}"
+    _serviceSubnet: "{{ k8s.serviceSubnet | default(default_k8s_serviceSubnet) }}"
+    _podSubnet: "{{ k8s.podSubnet | default(default_k8s_podSubnet) }}"
+    _dnsDomain: "{{ k8s.dnsDomain | default(default_k8s_dnsDomain) }}"
+
+- name: Determine control plane endpoint
+  ansible.builtin.set_fact:
+    _controlPlaneEndpoint: "{{ k8s.controlPlaneEndpoint | default( hostvars[groups['masters'][0]]['apiserver_advertise_address'] +':' + _controlPlaneBindPort) }}"
+
+- name: k8s version supported
+  ansible.builtin.assert:
+    fail_msg: Kubernetes {{ _k8s_version }} not supported
+    that:
+      - _k8s_version is version('1.28', '>=')
+      - _k8s_version is version('1.30', '<=')
+
+- block:                                                          # Must be root
+  - name: Disable swap (1/2)
+    # NOTE:XXX: it would be beneficial to also remove all swap partitions to
+    #           release disk space as we won't use it anymore.
+    ansible.builtin.template:
+      src: startup.swapoff.service.j2
+      dest: '/etc/systemd/system/startup.swapoff.service'
+  - name: Disable swap (2/2)
+    ansible.builtin.systemd:
+      name: startup.swapoff.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+  become: true
+
+- include_tasks: "install.yaml"
+
+
+- name: Create ~/.kube
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.kube/"
+    state: directory

@@ -1,0 +1,33 @@
+---
+- name: Set parameters
+  ansible.builtin.set_fact:
+    _is_control_plane_node: "{{ control_plane_node | default(false) }}"
+    _controlPlaneEndpoint: "{{ k8s.controlPlaneEndpoint | default(omit) }}"
+
+- name: Copy Kube config
+  ansible.builtin.copy:
+    src: '{{ kube_config_local_path }}'
+    dest: ~/.kube/config
+
+- name: Create kubeadm configuration
+  ansible.builtin.template:
+    src: kubeadm_config.yaml.j2
+    dest: ./kubeadm_config.yaml
+  vars:
+    - kubelet_extra_args: "{{ {'enable-controller-attach-detach': 'false'} | combine(_kubelet_extra_args) }}"
+
+- name: Reset k8s
+  shell: "kubeadm reset -f --cri-socket {{ _criSocket }}"
+  become: true
+
+- name: Retrieve PKI from master (1/2)
+  ansible.builtin.file:
+    path: /etc/kubernetes/pki/
+    state: directory
+    mode: 755
+  when: _is_control_plane_node
+  become: true
+
+- name: Join k8s cluster
+  ansible.builtin.shell: 'kubeadm join --config ./kubeadm_config.yaml'
+  become: true

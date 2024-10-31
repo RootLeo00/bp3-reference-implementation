@@ -1,0 +1,48 @@
+install_custom_kernel: true
+
+tcp_rmem: "4096 87380 {{ 67108864 if ansible_memtotal_mb >= 64000 else 33554432 if ansible_memtotal_mb >= 32000 else 16777216 }}"
+tcp_wmem: "4096 87380 {{ 67108864 if ansible_memtotal_mb >= 64000 else 33554432 if ansible_memtotal_mb >= 32000 else 16777216 }}"
+
+kernel:
+  image: lowlatency
+  GRUB_CMDLINE_LINUX_DEFAULT: quiet splash elevator=bfq
+  attributes:
+    - option: vm.swappiness
+      value: 1
+    - option: net.core.somaxconn
+      value: 65535
+    - option: net.ipv4.tcp_tw_reuse
+      value: 1
+    - option: net.ipv4.tcp_fin_timeout
+      value: 30
+    - option: net.ipv4.tcp_keepalive_time
+      value: 1200
+    - option: net.ipv4.ip_local_port_range
+      value: '1024 65000'
+    - option: net.ipv4.tcp_syncookies
+      value: 1
+    - option: net.ipv4.tcp_synack_retries
+      value: 2
+    - option: net.ipv4.tcp_timestamps
+      value: 1
+    - option: net.ipv4.tcp_max_syn_backlog
+      value: 65535
+    - option: net.core.netdev_max_backlog
+      value: 65535
+    - option: net.ipv4.tcp_rmem
+      value: '{{ tcp_rmem }}'
+    - option: net.ipv4.tcp_wmem
+      value: '{{ tcp_wmem }}'
+    - option: net.core.rmem_max
+      value:  '{{ tcp_rmem.split()[-1] }}'
+    - option: net.core.wmem_max
+      value: '{{ tcp_wmem.split()[-1] }}'
+  limits:
+    - domain: '*'
+      type: 'hard'
+      item:  'nofile'
+      value: '4194304'
+    - domain: '*'
+      type: 'soft'
+      item: 'nofile'
+      value: '4194304'

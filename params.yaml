@@ -1,0 +1,48 @@
+---
+# docker configuration
+docker:
+  # insecure_registries:
+  #   - 192.0.2.1:5000
+  #registry_mirrors:
+  #  - http://192.168.0.1:5000
+  # data_root: "/docker_data"
+
+# k8s configuration
+k8s:
+  clusterName: sopode-stagging
+  # runtime: docker
+  cni_plugin: flannel
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/16
+  dnsDomain: cluster.local
+  bindPort: 6443
+  controlPlaneEndpoint: 192.168.122.185:6443
+  calico:
+    nodeAddressAutodetectionV4:
+      cidrs:
+        - 192.168.56.0/24 #192.168.64.0/24
+  flannel:
+    nodeAddressAutodetectionV4:
+      cidrs:
+        - 192.168.122.185/24 #192.168.64.0/24
+  encapsulation: VXLAN
+  metallb:
+    addresses:
+      - 192.168.122.185/32
+      - 192.168.56.16/32
+
+
+  cluster_monitoring:
+    prometheus:
+      remote_write_address: "192.168.56.41" #"192.168.64.41"
+      remote_write_port: "9090"
+      remote_write_user: "admin"
+      remote_data_label: "sopnode-stagging"
+    promtail:
+      loki_address: "192.168.56.41" # 192.168.64.41
+      loki_port: 3100
+      loki_label: "sopnode-stagging"
+
+central_monitor:
+  prometheus:
+    prometheus_basic_auth_user: 'admin'

@@ -1,0 +1,31 @@
+# Deploy the core 
+- name: Cleanup core blueprint namespace 
+  kubernetes.core.k8s:
+    name: '{{ GCN.core.namespace }}'
+    api_version: v1
+    kind: Namespace
+    wait: yes
+    state: absent
+    wait_condition:
+        type: Complete 
+        status: "True"
+  when: GCN.core.cleanup is defined and GCN.core.cleanup
+
+- name: Create core blueprint namespace 
+  kubernetes.core.k8s:
+    name: '{{ GCN.core.namespace }}'
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Deploy core
+  kubernetes.core.helm:
+    name: basic
+    chart_ref: ./oai-cn5g-fed/charts/oai-5g-core/oai-5g-basic
+    release_namespace: '{{ GCN.core.namespace }}'
+    dependency_update: true
+    wait: true
+    force: true
+
+
+# todo: add restart of coredns pods: this serves to solve issue where pods are stuck in Init waiting for nrf to start, but curl http://oai-nrf... gives response oai-nrf not resolved (dns issue)

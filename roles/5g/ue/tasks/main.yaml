@@ -1,0 +1,28 @@
+# Deploy the UE
+- name: Cleanup UE  blueprint namespace 
+  kubernetes.core.k8s:
+    name: '{{ GCN.UE.namespace }}'
+    api_version: v1
+    kind: Namespace
+    wait: yes
+    state: absent
+    wait_condition:
+        type: Complete 
+        status: "True"
+  when: GCN.UE.cleanup is defined and GCN.UE.cleanup
+
+- name: Create UE blueprint namespace 
+  kubernetes.core.k8s:
+    name: '{{ GCN.UE.namespace }}'
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Deploy UE
+  kubernetes.core.helm:
+    name: nrue
+    chart_ref: ./oai-cn5g-fed/charts/oai-5g-ran/oai-nr-ue
+    release_namespace: '{{ GCN.UE.namespace }}'
+    wait: true
+    force: true
+

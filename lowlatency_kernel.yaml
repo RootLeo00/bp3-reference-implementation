@@ -1,0 +1,6 @@
+---
+- name: Low Latency kernel
+  hosts: lowlatency_kernel
+
+  roles:
+    - role: kernel

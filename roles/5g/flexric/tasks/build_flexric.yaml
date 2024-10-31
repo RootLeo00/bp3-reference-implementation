@@ -1,0 +1,108 @@
+- block: 
+  - name: Install development tools and libraries
+    include_role:
+      name: packages
+    vars:
+      packages:
+        system:
+          - libboost-all-dev
+          - libusb-1.0-0-dev
+          - doxygen
+          - python3-docutils
+          - python3-mako
+          - python3-numpy
+          - python3-requests
+          - python3-ruamel.yaml
+          - python3-setuptools
+          - python3-dev
+          - build-essential
+          - libsctp-dev
+          - tar
+          - m4
+          - automake
+          - ccache
+          - libtool
+          - cmake
+          - cmake-curses-gui
+          - bison
+          - flex
+          - gdb
+          - libpcre2-dev
+          - gcc-12
+          - g++-12
+          - mold
+          - ninja-build
+  become: true
+
+- name: Check installed GCC version
+  shell: gcc --version | grep ^gcc | sed 's/^.* //g'
+  register: gcc_version
+  ignore_errors: true
+
+- name: Print GCC version
+  debug:
+    msg: "Installed GCC version is {{ gcc_version.stdout }}"
+
+- block:
+  - name: Set alternative for GCC
+    command: update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+    when: gcc_version.stdout is not search("12") and ansible_facts['distribution'] == 'Ubuntu'
+  become: true
+
+- name: Clone SWIG repository
+  ansible.builtin.git:
+    repo: https://github.com/swig/swig.git
+    dest: "swig"
+    version: release-4.1
+    depth: 1
+
+- name: Build SWIG
+  ansible.builtin.shell: |
+    ./autogen.sh
+    ./configure --prefix=/usr/
+    make -j8
+  args:
+    chdir: "swig"
+
+- block:
+  - name: Install SWIG
+    ansible.builtin.shell: make install
+    args:
+      chdir: "swig"
+  - name: Configure dynamic linker run-time bindings
+    ansible.builtin.shell: 
+      ldconfig
+    args:
+      chdir: "swig"
+  become: true
+
+
+- name: Clone FlexRIC repository
+  git:
+    repo: 'https://gitlab.eurecom.fr/mosaic5g/flexric'
+    dest: "flexric"
+    version: "dev"
+
+- name: Create FlexRIC build directory
+  ansible.builtin.file:
+    path: "flexric/build"
+    state: directory
+
+- name: Configure FlexRIC
+  command:
+    cmd: cmake ..
+    chdir: "flexric/build"
+
+- name: Build FlexRIC
+  command:
+    cmd: make -j8
+    chdir: "flexric/build"
+
+- block:
+  - name: Install FlexRIC
+    command:
+      cmd: make install
+      chdir: "flexric/build"
+  become: true
+
+

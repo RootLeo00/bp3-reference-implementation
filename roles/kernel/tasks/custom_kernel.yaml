@@ -1,0 +1,33 @@
+- block:                                                          # must be root
+  - block:
+    - name: Install kernel
+      include_role:
+        name: packages
+      vars:
+        packages:
+          system:
+            - linux-image-{{ hostvars[inventory_hostname]['kernel']['image'] }}
+
+    - name: Shall reboot
+      ansible.builtin.set_fact:
+        _reboot: true
+    when: hostvars[inventory_hostname]['kernel']['image'] not in ansible_kernel
+
+  - block:
+    - name: Modify GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
+        line: GRUB_CMDLINE_LINUX_DEFAULT="{{ hostvars[inventory_hostname]['kernel']['GRUB_CMDLINE_LINUX_DEFAULT'] }}"
+        backup: yes
+      register: grub
+    when: hostvars[inventory_hostname]['kernel']['GRUB_CMDLINE_LINUX_DEFAULT'] is defined 
+
+  - block:
+    - name: Update grub
+      shell: update-grub
+    - name: Shall reboot
+      ansible.builtin.set_fact:
+        _reboot: true
+    when: grub.changed | default(false)
+  become: true

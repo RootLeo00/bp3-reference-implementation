@@ -1,0 +1,67 @@
+# 5G config
+GCN:
+  config_files: oai-cn5g-fed/    # make sur the path finished by a `/`
+  core:
+    present: true
+    namespace: core
+    nrfLoadBalancerIP: "192.0.2.250"
+    cleanup: true
+  RAN:
+    present: true
+    namespace: ran
+    cleanup: true
+    split:
+      f1: true
+      e1: false
+  UE:
+    present: true
+    cleanup: false
+    namespace: ran
+
+  flexric:
+    present: true
+
+  multus:
+    network: "192.0.2.0/24"
+    hostInterface: 'enp1s0' #'ran0'
+    # routes:
+    #   - dst: 69.0.1.0/24
+    #     gw: 192.0.2.1
+
+  mcc: '001'
+  mnc: '01'
+  tac: '0x0001'
+  sst: 1
+
+  dnns:
+    - dnn: oai
+      pdu_session_type: IPV4
+      ipv4_subnet: 12.1.1.0/24
+    - dnn: ims
+      pdu_session_type: IPV4V6
+      ipv4_subnet: 14.1.1.0/24
+
+  slices:
+    - snssai:
+        sst: 1
+      plnms:
+        - mcc: '001'
+          mnc: '01'
+      dnns:
+        - oai
+      qos_profile:
+        5qi: 5
+        session_ambr_ul: 200Mbps
+        session_ambr_dl: 400Mbps
+    - snssai:
+        sst: 1
+        sd: "FFFFFF"
+      plnms:
+        - mcc: '001'
+          mnc: '01'
+      dnns:
+        - ims
+      qos_profile:
+        5qi: 2
+        session_ambr_ul: 100Mbps
+        session_ambr_dl: 200Mbps

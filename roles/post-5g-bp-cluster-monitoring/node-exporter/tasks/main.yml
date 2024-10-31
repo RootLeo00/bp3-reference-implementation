@@ -1,0 +1,13 @@
+- name: Create directories for node exporter
+  ansible.builtin.file:
+    path: node_exporter
+    state: directory
+    mode: 0700
+
+- name: Apply Node Exporter DaemonSet
+  template:
+    src: node-exporter.yaml.j2
+    dest: node_exporter/node-exporter.yaml
+
+- name: Apply Node Exporter YAML to the cluster
+  shell: kubectl apply -f node_exporter/node-exporter.yaml 

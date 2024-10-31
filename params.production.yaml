@@ -1,0 +1,42 @@
+---
+# docker configuration
+docker:
+  # insecure_registries:
+  #   - 192.0.2.1:5000
+  registry_mirrors:
+    - http://192.168.0.1:5000
+  # data_root: "/docker_data"
+
+# k8s configuration
+k8s:
+  clusterName: vwall-production
+  # runtime: docker
+  # cni_plugin: calico
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/16
+  dnsDomain: cluster.local
+  bindPort: 6443
+  controlPlaneEndpoint: 192.168.0.69:6443
+  calico:
+    nodeAddressAutodetectionV4:
+      cidrs:
+        - 192.168.0.0/24
+  encapsulation: VXLAN
+  metallb:
+    addresses:
+      - 172.29.0.250/32
+
+  cluster_monitoring:
+    prometheus:
+      remote_write_address: "192.168.0.1"
+      remote_write_port: "9090"
+      remote_write_user: "admin"
+      remote_data_label: "centralhub"
+    promtail:
+      loki_address: 192.168.0.1
+      loki_port: 3100
+      loki_label: "centralhub"
+
+central_monitor:
+  prometheus:
+    prometheus_basic_auth_user: 'admin'

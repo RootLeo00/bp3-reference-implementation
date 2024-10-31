@@ -1,0 +1,11 @@
+- hosts: central_monitor
+  vars:
+    prometheus_basic_auth_user: "{{ central_monitor['prometheus']['prometheus_basic_auth_user'] }}"
+    prometheus_basic_auth_password: "{{ secrets['prometheus_basic_auth_password'] }}"
+    grafana_password: "{{ secrets['grafana_password'] }}"
+  roles:
+    - docker
+    - grafana-loki-prometheus/prometheus
+    - grafana-loki-prometheus/loki
+    - grafana-loki-prometheus/grafana
+    

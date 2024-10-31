@@ -1,0 +1,8 @@
+[Unit]
+Description=Swap OFF
+
+[Service]
+ExecStart=/usr/sbin/swapoff -a
+
+[Install]
+WantedBy=multi.user.target

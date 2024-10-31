@@ -1,0 +1,109 @@
+- name: Set parameters
+  ansible.builtin.set_fact:
+    _grafana_version: "{{ default_grafana_version }}"   # https://api.github.com/repos/prometheus/prometheus/releases
+
+- name: Create directories for Grafana
+  ansible.builtin.file:
+    path: grafana
+    state: directory
+    mode: 0700
+
+- name: Configure Grafana 
+  template:
+    src: grafana.ini.j2
+    dest: '{{ ansible_env.HOME }}/grafana/grafana.ini'
+
+- name: Copy dashboard files
+  ansible.builtin.copy:
+    src: dashboards
+    dest: "{{ ansible_env.HOME }}/grafana/"
+
+- name: Deploy Grafana
+  become: yes
+  docker_container:
+    name: grafana-server
+    image: "grafana/grafana-enterprise:{{_grafana_version}}"
+    restart: true
+    state: started
+    restart_policy: always
+    ports:
+      - "3000:3000"
+    networks:
+      - name: host
+    volumes:
+      - "{{ ansible_env.HOME }}/grafana/grafana.ini:/etc/grafana/grafana.ini"
+      - "{{ ansible_env.HOME }}/grafana/dashboards:/tmp/dashboards"
+
+- name: Wait for grafana to be ready
+  ansible.builtin.uri:
+    url: http://localhost:3000/api/health
+    method: GET
+    status_code: 200
+  register: grafana_wait
+  retries: 10
+  delay: 5
+  until: grafana_wait is succeeded
+
+- name: Reset Grafana admin password
+  become: yes
+  community.docker.docker_container_exec:
+    container: grafana-server
+    command: "grafana-cli admin reset-admin-password {{ grafana_password }}"
+
+- name: Load data sources from JSON file
+  set_fact:
+    datasources: "{{ lookup('file', '{{ playbook_dir }}/roles/grafana-loki-prometheus/grafana/templates/datasources2.json') | from_json }}"
+
+- name: Ensure Grafana data sources are present
+  community.grafana.grafana_datasource:
+    url: http://localhost:3000
+    url_username: admin
+    url_password: "{{ grafana_password }}"
+    user: admin
+    password: "{{ grafana_password }}"
+    validate_certs: no
+    state: present
+    name: "{{ item.name }}"
+    ds_type: "{{ item.type }}"
+    ds_url: "{{ item.url }}"
+    access: "{{ item.access }}"
+    is_default: "{{ item.isDefault | default(false) }}"
+    additional_json_data: "{{ item.jsonData | default({}) }}"
+  loop: "{{ datasources }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: datasource_result
+
+# - name: Debug datasource result
+#   debug:
+#     var: datasource_result
+
+- name: Find JSON files in the dashboard directory
+  ansible.builtin.find:
+    paths: "{{ ansible_env.HOME }}/grafana/dashboards/"
+    patterns: "*.json"
+    recurse: yes
+  register: dashboard_files
+
+# - name: Debug found dashboard files
+#   debug:  
+#     var: dashboard_files.files
+
+- name: Ensure Grafana dashboards are present
+  community.grafana.grafana_dashboard:
+    grafana_url: http://localhost:3000
+    grafana_user: admin
+    grafana_password: "{{ grafana_password }}"
+    validate_certs: no
+    state: present
+    folder: "General"
+    overwrite: true
+    path: "{{ item.path }}"
+  loop: "{{ dashboard_files.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  register: dashboard_result
+
+# - name: Debug dashboard result
+#   debug:
+#     var: dashboard_result
