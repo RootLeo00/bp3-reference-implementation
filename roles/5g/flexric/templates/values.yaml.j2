@@ -32,6 +32,6 @@ volume: # Specify the shared volume path
     path: /mnt/flexric/
   
 restartPolicy: Always
-nodeSelector: {}
+nodeSelector: {kubernetes.io/hostname: node2}
 tolerations: []
 affinity: {}
