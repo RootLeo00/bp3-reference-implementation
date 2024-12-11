@@ -82,6 +82,6 @@ resources:
 
 terminationGracePeriodSeconds: 0
 
-nodeSelector: {}
+nodeSelector: {kubernetes.io/hostname: node2}
 
 nodeName:
