@@ -1,21 +1,22 @@
 all:
   hosts:
-    192.168.122.185:
+    192.168.122.192:
       name: node1
-      apiserver_advertise_address: 192.168.122.185
-    192.168.122.126:
+      apiserver_advertise_address: 192.168.122.192 #vm0
+    192.168.122.115:
       name: node2
-      apiserver_advertise_address: 192.168.122.126
-    192.168.56.41:
+      apiserver_advertise_address: 192.168.122.115 #vm2
+    192.168.200.5:
       name: node3
-      apiserver_advertise_address: 192.168.56.41
+      apiserver_advertise_address: 192.168.200.5 #vm3
   children:
     masters:
       hosts:
-        192.168.122.185: {}
+        192.168.122.192: {}
     workers:
       hosts:
-        192.168.122.126: {}
+        192.168.200.5: {}
+        192.168.122.115: {}
     central_monitor:
       hosts:
         192.168.56.41: {}

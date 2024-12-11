@@ -16,7 +16,7 @@ k8s:
   serviceSubnet: 10.96.0.0/16
   dnsDomain: cluster.local
   bindPort: 6443
-  controlPlaneEndpoint: 192.168.122.185:6443
+  controlPlaneEndpoint: 192.168.122.192:6443
   calico:
     nodeAddressAutodetectionV4:
       cidrs:
@@ -24,11 +24,11 @@ k8s:
   flannel:
     nodeAddressAutodetectionV4:
       cidrs:
-        - 192.168.122.185/24 #192.168.64.0/24
+        - 192.168.122.192/24 #192.168.64.0/24
   encapsulation: VXLAN
   metallb:
     addresses:
-      - 192.168.122.185/32
+      - 192.168.122.192/32
       - 192.168.56.16/32
 
 
