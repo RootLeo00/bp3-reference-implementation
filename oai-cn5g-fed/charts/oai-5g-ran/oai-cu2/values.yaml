@@ -37,7 +37,7 @@ multus:
     # if gatway is commented then it will be removed
     #gateway: "172.21.19.254"
     #routes: 
-    hostInterface: "enp1s0"      # Interface of the host machine on which this pod will be scheduled
+    hostInterface: "eno1"      # Interface of the host machine on which this pod will be scheduled
   n2Interface:
     create: false
     ipAdd: "172.21.6.94"
