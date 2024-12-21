@@ -1,22 +1,20 @@
 all:
   hosts:
-    192.168.122.192:
+    132.227.122.102:
       name: node1
-      apiserver_advertise_address: 192.168.122.192 #vm0
-    192.168.122.115:
+      apiserver_advertise_address: 132.227.122.102 
+      ansible_user: pow_cons
+    132.227.122.122:
       name: node2
-      apiserver_advertise_address: 192.168.122.115 #vm2
-    192.168.200.5:
-      name: node3
-      apiserver_advertise_address: 192.168.200.5 #vm3
+      apiserver_advertise_address: 132.227.122.122 
+      ansible_user: node2
   children:
     masters:
       hosts:
-        192.168.122.192: {}
+        132.227.122.102: {}
     workers:
       hosts:
-        192.168.200.5: {}
-        192.168.122.115: {}
+        132.227.122.122: {}
     central_monitor:
       hosts:
         192.168.56.41: {}
