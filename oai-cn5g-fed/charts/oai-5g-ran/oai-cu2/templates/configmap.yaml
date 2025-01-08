@@ -1,20 +1,20 @@
-{{- if .Values.config.flexrichost }}
----
-#https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/ci-scripts/conf_files/gnb.sa.band78.106prb.rfsim.conf
----
-### Configuration file for band77 and 51 PRB tested with B210
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: conf-flexric
-data:
-  flexric.conf: |
-    [NEAR-RIC]
-    NEAR_RIC_IP = @FLEXRIC_IP@     
-    [XAPP]
-    DB_PATH = /flexric/db/
-    DB_NAME = xapp_rnis_db
-{{- end }}
+# {{- if .Values.config.flexrichost }}
+# ---
+# #https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/ci-scripts/conf_files/gnb.sa.band78.106prb.rfsim.conf
+# ---
+# ### Configuration file for band77 and 51 PRB tested with B210
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: conf-flexric
+# data:
+#   flexric.conf: |
+#     [NEAR-RIC]
+#     NEAR_RIC_IP = @FLEXRIC_IP@     
+#     [XAPP]
+#     DB_PATH = /flexric/db/
+#     DB_NAME = xapp_rnis_db
+# {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
