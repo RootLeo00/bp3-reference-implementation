@@ -6,9 +6,7 @@ metadata:
     {{- include "oai-cu.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
-  {{- if .Values.global }}{{ if not .Values.global.clusterIpServiceIpAllocation }}
   clusterIP: None
-  {{- end }}{{ end }}
   ports:
     - name: n2
       port: 36412
