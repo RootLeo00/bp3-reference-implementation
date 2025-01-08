@@ -69,6 +69,7 @@ config:
 
 ## Debugging section
 podSecurityContext:
+  privileged: true
   runAsUser: 0
   runAsGroup: 0
 
