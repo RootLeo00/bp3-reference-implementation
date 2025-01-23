@@ -128,6 +128,6 @@ affinity: {}
 
 terminationGracePeriodSeconds: 5
 
-nodeSelector: {kubernetes.io/hostname: node2}
+nodeSelector: {kubernetes.io/hostname: node3}
 
 nodeName: 
