@@ -1,0 +1,68 @@
+- name: Include 5G deployment role
+  ansible.builtin.include_role:
+    name: 5g
+
+- name: Check if virtual environment exists
+  ansible.builtin.stat:
+    path: "$HOME/power-consumption-tool/power-metrics-per-pod-realtime/.venv"
+  register: venv_check
+
+- name: Create virtual environment if it doesn't exist
+  ansible.builtin.command:
+    cmd: python3 -m venv "$HOME/power-consumption-tool/power-metrics-per-pod-realtime/.venv"
+  when: not venv_check.stat.exists
+
+- name: Install required Python packages in the virtual environment
+  ansible.builtin.pip:
+    requirements: "$HOME/power-consumption-tool/power-metrics-per-pod-realtime/requirements.txt"
+    virtualenv: "$HOME/power-consumption-tool/power-metrics-per-pod-realtime/.venv"
+    # executable: "$HOME/power-consumption-tool/power-metrics-per-pod-realtime/.venv/bin/pip"
+
+- name: Get oai-upf pod name
+  ansible.builtin.command:
+    cmd: kubectl get pods -n {{ GCN.core.namespace }} --field-selector=status.phase=Running -l app.kubernetes.io/name=oai-upf -o=jsonpath='{.items[0].metadata.name}'
+  register: upf_pod
+  failed_when: upf_pod.stdout == ""
+  changed_when: false
+
+- name: Install iputils-ping and iperf on oai-upf
+  ansible.builtin.command:
+    cmd: kubectl exec -n {{ GCN.core.namespace }} {{ upf_pod.stdout }} -- apt update
+  when: upf_pod.stdout != ""
+  register: install_upf_packages
+  ignore_errors: yes
+
+- name: Install iputils-ping and iperf on oai-upf
+  ansible.builtin.command:
+    cmd: kubectl exec -n {{ GCN.core.namespace }} {{ upf_pod.stdout }} -- apt install -y iputils-ping iperf
+  when: upf_pod.stdout != ""
+  register: install_upf_packages
+  ignore_errors: yes
+
+- name: Get nr-ue pod name
+  ansible.builtin.command:
+    cmd: kubectl get pods -n {{ GCN.UE.namespace }} --field-selector=status.phase=Running -l app.kubernetes.io/name=oai-nr-ue -o=jsonpath='{.items[0].metadata.name}'
+  register: nr_ue_pod
+  failed_when: nr_ue_pod.stdout == ""
+
+- name: Install iputils-ping and iperf on nr-ue
+  ansible.builtin.command:
+    cmd: kubectl exec -n {{ GCN.UE.namespace }} {{ nr_ue_pod.stdout }} -- apt update 
+  when: nr_ue_pod.stdout != ""
+  register: install_nr_ue_packages
+  ignore_errors: yes
+
+- name: Install iputils-ping and iperf on nr-ue
+  ansible.builtin.command:
+    cmd: kubectl exec -n {{ GCN.UE.namespace }} {{ nr_ue_pod.stdout }} -- apt install -y iputils-ping iperf
+  when: nr_ue_pod.stdout != ""
+  register: install_nr_ue_packages
+  ignore_errors: yes
+
+- name: Print install results for UPF
+  ansible.builtin.debug:
+    var: install_upf_packages.stdout
+
+- name: Print install results for NR-UE
+  ansible.builtin.debug:
+    var: install_nr_ue_packages.stdout

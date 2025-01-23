@@ -30,11 +30,12 @@
 - block:
   - name: Deploy gNB-CU
     kubernetes.core.helm:
-      name: cu
-      chart_ref: ./oai-cn5g-fed/charts/oai-5g-ran/oai-cu
+      name: "cu-{{ item }}"
+      chart_ref: "./oai-cn5g-fed/charts/oai-5g-ran/oai-cu{{ item | string if item > 1 else '' }}"
       release_namespace: '{{ GCN.RAN.namespace }}'
       wait: true
       force: true
+    loop: "{{ range(1, GCN.RAN.count_CU + 1) | list }}"
     when: GCN.RAN.split.f1 and not GCN.RAN.split.e1
 
   - block:
@@ -54,12 +55,16 @@
         force: true
     when: GCN.RAN.split.f1 and GCN.RAN.split.e1
 
-  - name: Deploy gNB-DU
-    kubernetes.core.helm:
-      name: du
-      chart_ref: ./oai-cn5g-fed/charts/oai-5g-ran/oai-du
-      release_namespace: '{{ GCN.RAN.namespace }}'
-      wait: true
-      force: true
-    when: GCN.RAN.split.f1
+- name: Deploy gNB-DU with Helm
+  kubernetes.core.helm:
+    name: "du-{{ item }}"
+    chart_ref: "./oai-cn5g-fed/charts/oai-5g-ran/oai-du{{ item | string if item > 1 else '' }}"
+    release_namespace: "{{ GCN.RAN.namespace | default('default') }}"
+    wait: true
+    force: true
+    set_values:
+      - value: config.cuHost="{% if  GCN.RAN.du_to_cu_mapping[item - 1].cu == 1 %}oai-cu.{{ GCN.RAN.namespace }}.svc.cluster.local{% else %}oai-cu{{ GCN.RAN.du_to_cu_mapping[item - 1].cu }}.{{ GCN.RAN.namespace }}.svc.cluster.local{% endif %}"
+  loop: "{{ range(1, GCN.RAN.count_DU + 1) | list }}"
   when: GCN.RAN.split.f1 or GCN.RAN.split.e1
+
+

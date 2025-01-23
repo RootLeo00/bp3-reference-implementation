@@ -1,0 +1,7 @@
+- name: Cleanup 5G Deployment
+  hosts: masters[0]
+  tasks:
+    - name: Uninstall Helm deployments
+      ansible.builtin.command: helm uninstall --all -n core
+    - name: Uninstall RAN deployments
+      ansible.builtin.command: helm uninstall --all -n ran

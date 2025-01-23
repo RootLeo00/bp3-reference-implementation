@@ -1,5 +1,6 @@
 - name: Deploy Core, RAN, and UE
   hosts: masters[0]
+  gather_facts: yes
 
   roles:
   - role: 5g/base
@@ -11,3 +12,5 @@
     when: GCN.RAN.present | default(false)
   - role: 5g/ue
     when: GCN.UE.present | default(false)
+  - role: experiments/prepare
+  - role: experiments/execute

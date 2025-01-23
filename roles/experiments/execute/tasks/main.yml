@@ -1,0 +1,60 @@
+- name: Include 5G deployment role
+  ansible.builtin.include_role:
+    name: 5g
+
+- name: Get oai-upf pod name
+  ansible.builtin.command:
+    cmd: kubectl get pods -n {{ GCN.core.namespace }} --field-selector=status.phase=Running -l app.kubernetes.io/name=oai-upf -o=jsonpath='{.items[0].metadata.name}'
+  register: upf_pod
+  failed_when: upf_pod.stdout == ""
+  changed_when: false
+
+- name: Debug upf_pod
+  ansible.builtin.debug:
+    var: upf_pod.stdout
+
+- name: Get nr-ue pod name
+  ansible.builtin.shell: kubectl get pods -n {{ GCN.UE.namespace }} --no-headers -o custom-columns=":metadata.name" | grep '^oai-nr-ue' | tr '\n' ' '
+  register: nr_ue_pods
+  failed_when: nr_ue_pods.stdout == ""
+
+- name: Debug nr_ue_pods
+  ansible.builtin.debug:
+    var: nr_ue_pods.stdout
+
+- name: Run test script
+  ansible.builtin.command:
+    cmd: > #5 25 75 125 250 500 625
+      .venv/bin/python tests.py 
+        --data-volumes 5 
+        --num-cus {{ GCN.RAN.count_CU }} 
+        --ue-pod-names {{ nr_ue_pods.stdout }} 
+        --upf-pod-names {{ upf_pod.stdout }} 
+        --prometheus-url "http://132.227.122.122:31894" 
+        --core-namespace {{ GCN.core.namespace }} 
+        --ran-namespace {{ GCN.RAN.namespace }} 
+        --packet-length 500 
+        --duration-baseline 5
+  args:
+    chdir: "$HOME/power-consumption-tool/power-metrics-per-pod-realtime"
+  register: test_output
+  ignore_errors: no
+
+- name: Print test results
+  ansible.builtin.debug:
+    var: test_output.stdout_lines
+
+- name: Cleanup deployment (optional)
+  ansible.builtin.include_role:
+    name: 5g
+  vars:
+    GCN:
+      core:
+        present: false
+      RAN:
+        present: false
+      UE:
+        present: false
+      flexric:
+        present: false
+  when: cleanup_enabled | default(false)

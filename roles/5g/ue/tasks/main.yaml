@@ -1,5 +1,6 @@
 # Deploy the UE
-- name: Cleanup UE  blueprint namespace 
+
+- name: Cleanup UE blueprint namespace 
   kubernetes.core.k8s:
     name: '{{ GCN.UE.namespace }}'
     api_version: v1
@@ -18,11 +19,12 @@
     kind: Namespace
     state: present
 
-- name: Deploy UE
+- name: Deploy UEs
   kubernetes.core.helm:
-    name: nrue
-    chart_ref: ./oai-cn5g-fed/charts/oai-5g-ran/oai-nr-ue
+    name: "nrue{{ item }}"
+    chart_ref: "./oai-cn5g-fed/charts/oai-5g-ran/oai-nr-ue{{ item if item > 1 else '' }}"
     release_namespace: '{{ GCN.UE.namespace }}'
     wait: true
     force: true
-
+  loop: "{{ range(1, GCN.UE.count + 1) | list }}"
+  when: GCN.UE.count is defined

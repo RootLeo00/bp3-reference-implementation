@@ -7,13 +7,21 @@ GCN:
     nrfLoadBalancerIP: "192.0.2.250"
     cleanup: true
   RAN:
+    count_DU: 4
+    count_CU: 3
     present: true
     namespace: ran
     cleanup: true
     split:
       f1: true
       e1: false
+    du_to_cu_mapping: 
+      - cu: 1
+      - cu: 2
+      - cu: 3
+      - cu: 1
   UE:
+    count: 4
     present: true
     cleanup: false
     namespace: ran
